@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>자기효능감 진단(초5)</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body>
+  <main class="app" id="app" aria-live="polite">
+    <!-- Start -->
+    <section class="card" id="screen-start">
+      <h1>자기효능감 진단</h1>
+      <p class="sub">
+        24문항이에요. 정답은 없어요.<br />
+        지금 내 느낌에 가장 가까운 이모지를 골라줘요 🙂
+      </p>
+
+      <div class="form" aria-label="기본 정보 입력">
+        <div class="field">
+          <label for="studentName">이름</label>
+          <input id="studentName" type="text" autocomplete="name" placeholder="예: 김하늘" />
+        </div>
+
+        <div class="field">
+          <label for="birthDate">생년월일</label>
+          <input id="birthDate" type="date" autocomplete="bday" />
+        </div>
+
+        <!-- ✅ 진단 시점: 그대로 유지 -->
+        <div class="field">
+          <label for="phaseSelect">진단 시점</label>
+          <select id="phaseSelect">
+            <option value="학년초">학년초</option>
+            <option value="학년말">학년말</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="scale-preview" aria-label="응답 척도 안내">
+        <span>😟 전혀 아니에요(1)</span>
+        <span>🙁 아니에요(2)</span>
+        <span>😐 보통이에요(3)</span>
+        <span>🙂 그래요(4)</span>
+        <span>😄 매우 그래요(5)</span>
+      </div>
+
+      <button class="btn primary" id="btn-start">시작하기</button>
+      <!-- ✅ 요청대로: 저장 안내/Apps Script 문구 삭제 -->
+    </section>
+
+    <!-- Survey -->
+    <section class="card hidden" id="screen-survey">
+      <div class="topbar">
+        <div class="progress-wrap" aria-label="진행률">
+          <div class="progress-text" id="progressText">1 / 24</div>
+          <div class="progress">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+        </div>
+        <button class="btn ghost" id="btn-exit" type="button">나가기</button>
+      </div>
+
+      <div class="q-meta">
+        <span class="pill" id="domainPill">영역</span>
+      </div>
+
+      <h2 class="q-text" id="questionText">문항</h2>
+
+      <div class="emoji-group"
+           id="emojiGroup"
+           role="radiogroup"
+           aria-label="이모지로 점수 선택">
+      </div>
+
+      <div class="nav">
+        <button class="btn" id="btn-prev" type="button">이전</button>
+        <button class="btn primary" id="btn-next" type="button">다음</button>
+      </div>
+
+      <p class="tiny" id="hintLine">
+        탭으로 이모지에 이동하고, 엔터/스페이스로 선택할 수 있어요.
+      </p>
+    </section>
+
+    <!-- Result -->
+    <section class="card hidden" id="screen-result">
+      <h1>결과 리포트</h1>
+      <p class="sub" id="summaryLine"></p>
+
+      <div class="result-grid">
+        <div class="box">
+          <h3>총점 / 등급</h3>
+          <p class="big" id="totalLine">-</p>
+          <p class="tiny" id="missingLine"></p>
+          <p class="tiny" id="metaLine"></p>
+
+          <!-- 저장 상태 표시 -->
+          <div class="save-state" id="saveState" aria-live="polite"></div>
+        </div>
+
+        <div class="box">
+          <h3>영역별 점수(평균)</h3>
+          <div id="domainTableWrap"></div>
+        </div>
+      </div>
+
+      <div class="box">
+        <h3>강점 TOP 2</h3>
+        <ul id="strengthList" class="list"></ul>
+      </div>
+
+      <div class="box">
+        <h3>성장 포인트 TOP 2</h3>
+        <ul id="growthList" class="list"></ul>
+      </div>
+
+      <div class="box">
+        <h3>이번 주 실천 3가지</h3>
+        <ol id="actionList" class="list"></ol>
+      </div>
+
+      <div class="box">
+        <h3>도움요청 문장 예시 2개</h3>
+        <ul id="helpSentenceList" class="list"></ul>
+      </div>
+
+      <details class="box">
+        <summary><strong>보호자/교사용 안내</strong></summary>
+        <p class="tiny" id="adultNote"></p>
+      </details>
+
+      <div class="nav">
+        <button class="btn" id="btn-restart" type="button">다시하기</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
