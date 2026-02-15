@@ -450,24 +450,30 @@ function renderResult(){
   $adultNote.textContent = buildAdultNote(grade);
 
   // 저장 payload
-  const payload = {
-    key: `${name}|${birthDate}`,
-    name,
-    birthDate,
-    phase,
-    assessedAt,
-    total,
-    grade,
-    domainAvg: Object.fromEntries(Object.values(byDomain).map(d => [d.key, d.avg])),
-    analysis: {
-      summary: buildReportText(grade),
-      strengths: strengthTop.map(d => ({ domain: d.key, avg: d.avg })),
-      growth: growthTop.map(d => ({ domain: d.key, avg: d.avg })),
-      actions,
-      helpSentences: helps,
-    },
-    answers,
-  };
+  const domain = Object.fromEntries(
+  Object.values(byDomain).map(d => [d.key, d.avg])
+);
+
+const analysis = {
+  summary: buildReportText(grade),
+  strengthTop2: strengthTop.map(d => ({ domain: d.key, avg: d.avg })),
+  growthTop2: growthTop.map(d => ({ domain: d.key, avg: d.avg })),
+  actions,
+  helpSentences: helps,
+};
+
+const payload = {
+  assessedAt,
+  phase,
+  name,
+  birthDate,
+  total,
+  grade,
+  domain,     // ✅ 플젝3이 기대하는 키명으로
+  analysis,   // ✅ 플젝3이 기대하던 analysis 키 유지
+  answers,    // ✅ 유지
+};
+
 
   autoSaveOnce(payload);
 }
@@ -551,5 +557,6 @@ $btnRestart.addEventListener("click", () => {
 // 초기화
 showScreen("start");
 initAnswers();
+
 
 
