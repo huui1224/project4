@@ -3,7 +3,7 @@
 // =========================
 
 // ====== 0) 여기만 너 값으로 바꾸면 됨 ======
-const SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxano2LWOLUGmF1ReY8KO-5XvfxI1uhF1Y89BXWYF-yT8ZLN2vfd96yR0aHayviWDmznA/exec"; // 예: https://script.google.com/macros/s/XXXX/exec
+const SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxc4S_FK-QAr9Gh6ZMy0bjeGrdy_29COhxH_HNJHp3IAn8M_EyXSsxHLkXE4epYStXCzw/exec"; // 예: https://script.google.com/macros/s/XXXX/exec
 const SHEETS_TOKEN = "wkrlgysmdrka0215"; // Code.gs의 WRITE_TOKEN과 동일해야 함
 // =========================
 
@@ -548,3 +548,4 @@ $btnRestart.addEventListener("click", () => {
 // 초기화
 showScreen("start");
 initAnswers();
+
