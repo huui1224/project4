@@ -489,17 +489,20 @@ async function autoSaveOnce(payload){
   setSaveState("저장 중...", "");
 
   try {
-    const res = await fetch(SHEETS_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: SHEETS_TOKEN, data: payload }),
-    });
+const body = JSON.stringify({ token: SHEETS_TOKEN, data: payload });
 
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok || json.ok === false) {
-      const msg = json?.error || `HTTP ${res.status}`;
-      throw new Error(msg);
-    }
+const res = await fetch(SHEETS_ENDPOINT, {
+  method: "POST",
+  headers: { "Content-Type": "text/plain;charset=utf-8" },
+  body
+});
+
+const json = await res.json().catch(() => ({}));
+if (!res.ok || json.ok === false) {
+  const msg = json?.error || `HTTP ${res.status}`;
+  throw new Error(msg);
+}
+
 
     setSaveState("✅ 저장 완료!", "ok");
   } catch (e) {
@@ -548,4 +551,5 @@ $btnRestart.addEventListener("click", () => {
 // 초기화
 showScreen("start");
 initAnswers();
+
 
