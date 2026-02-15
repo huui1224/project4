@@ -5,6 +5,7 @@
 // ====== 0) 여기만 너 값으로 바꾸면 됨 ======
 const SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzMquZyik2REh8R5MnhfsGtVvCVAatNUMk0dBMqvehMJX-J_RkdbaBAz-SJgMB7dgCrFA/exec"; // 예: https://script.google.com/macros/s/XXXX/exec
 const SHEETS_TOKEN = "wkrlgysmdrka0215"; // Code.gs의 WRITE_TOKEN과 동일해야 함
+// =========================
 
 // ====== 1) 기본 설정 ======
 const SCALE = [
@@ -16,28 +17,13 @@ const SCALE = [
 ];
 
 const DOMAINS = {
-  s: {
-    name: "도전",
-    desc: "새로운 일도 한 번 해보려는 마음이에요.",
-  },
-  t: {
-    name: "전략",
-    desc: "방법을 생각하고 바꿔가며 해결하려는 힘이에요.",
-  },
-  h: {
-    name: "회복",
-    desc: "답답해도 다시 마음을 다잡고 이어가는 힘이에요.",
-  },
-  r: {
-    name: "관계",
-    desc: "필요할 때 도움을 구하고 함께 해내는 힘이에요.",
-  },
+  s: { name: "도전", desc: "새로운 일도 한 번 해보려는 마음이에요." },
+  t: { name: "전략", desc: "방법을 생각하고 바꿔가며 해결하려는 힘이에요." },
+  h: { name: "회복", desc: "답답해도 다시 마음을 다잡고 이어가는 힘이에요." },
+  r: { name: "관계", desc: "필요할 때 도움을 구하고 함께 해내는 힘이에요." },
 };
 
 // ====== 2) 문항(24) ======
-// - 4영역 × 6문항 = 24
-// - 각 영역 역채점 2개(총 8개)
-// - weight는 모두 1
 const ITEMS = [
   // --- s: 도전(6) ---
   { id: "s1", domain: "s", text: "새로운 활동이더라도 한 번 해보려고 해요.", reverse: false, weight: 1, intent: "새로운 일을 시도한다" },
@@ -61,7 +47,6 @@ const ITEMS = [
   { id: "h3", domain: "h", text: "기분이 상하면 하루 종일 아무것도 하기 싫어져요.", reverse: true,  weight: 1, intent: "기분 때문에 멈춘다(역)" },
   { id: "h4", domain: "h", text: "내 기분을 말로 설명할 수 있어요.", reverse: false, weight: 1, intent: "감정을 말로 표현한다" },
   { id: "h5", domain: "h", text: "힘든 일이 있으면 ‘나는 원래 못해’라고 생각해요.", reverse: true,  weight: 1, intent: "능력으로 단정한다(역)" },
-  // ✅ 요청 반영: h6 텍스트 변경
   { id: "h6", domain: "h", text: "“어떤 도움이 필요해요”라고 구체적으로 말할 수 있어요.", reverse: false, weight: 1, intent: "필요한 도움을 구체화한다" },
 
   // --- r: 관계(6) ---
@@ -139,15 +124,14 @@ function round1(n) {
 }
 
 function reverseScore(raw) {
-  // 1~5 -> 5~1
-  return 6 - raw;
+  return 6 - raw; // 1~5 -> 5~1
 }
 
 function getDomainName(domainKey) {
   return DOMAINS[domainKey]?.name || "영역";
 }
 
-// ====== 6) 렌더: 이모지 버튼(키보드 접근) ======
+/* ====== ✅ 원래 CSS(.face/.label)에 맞춘 이모지 렌더 ====== */
 function renderEmojiGroup(selectedScore) {
   $emojiGroup.innerHTML = "";
 
@@ -161,18 +145,17 @@ function renderEmojiGroup(selectedScore) {
 
     const isSelected = selectedScore === opt.score;
     btn.setAttribute("aria-checked", isSelected ? "true" : "false");
+
+    // 탭 접근성: 선택된 것 우선, 없으면 첫 번째만 0
     btn.tabIndex = isSelected ? 0 : (idx === 0 && selectedScore == null ? 0 : -1);
 
+    // ✅ 원래 CSS가 기대하는 구조
     btn.innerHTML = `
-      <span class="emoji-icon" aria-hidden="true">${opt.emoji}</span>
-      <span class="emoji-label">${opt.label}<span class="emoji-score">(${opt.score})</span></span>
+      <span class="face" aria-hidden="true">${opt.emoji}</span>
+      <span class="label">${opt.label}(${opt.score})</span>
     `;
 
-    if (isSelected) btn.classList.add("selected");
-
-    btn.addEventListener("click", () => {
-      selectScore(opt.score);
-    });
+    btn.addEventListener("click", () => selectScore(opt.score));
 
     btn.addEventListener("keydown", (e) => {
       const key = e.key;
@@ -205,12 +188,11 @@ function focusEmojiByOffset(dir) {
   btns[nextIdx]?.focus();
 }
 
-function setSelectedStyles(score) {
+function setSelectedAria(score) {
   const btns = Array.from($emojiGroup.querySelectorAll(".emoji"));
   btns.forEach((b) => {
     const s = Number(b.dataset.score);
     const isSel = s === score;
-    b.classList.toggle("selected", isSel);
     b.setAttribute("aria-checked", isSel ? "true" : "false");
     b.tabIndex = isSel ? 0 : -1;
   });
@@ -225,27 +207,20 @@ function renderQuestion() {
   const item = ITEMS[currentIndex];
   const answered = answers[item.id];
 
-  // 진행률
   $progressText.textContent = `${currentIndex + 1} / ${ITEMS.length}`;
   const pct = ((currentIndex + 1) / ITEMS.length) * 100;
   $progressBar.style.width = `${pct}%`;
 
-  // 영역
   $domainPill.textContent = getDomainName(item.domain);
-
-  // 문항
   $questionText.textContent = item.text;
 
-  // 이모지
   renderEmojiGroup(answered);
 }
 
 function selectScore(score) {
   const item = ITEMS[currentIndex];
   answers[item.id] = score;
-  setSelectedStyles(score);
-
-  // 선택 후 다음 버튼으로 포커스 이동(원하면 끌 수 있음)
+  setSelectedAria(score);
   $btnNext.focus();
 }
 
@@ -287,7 +262,6 @@ function goNext() {
 
 // ====== 8) 채점/등급/리포트 ======
 function scoreAll() {
-  // 원점수(역채점 적용 전) + 역채점 반영 점수
   const scored = ITEMS.map((it) => {
     const raw = answers[it.id];
     if (raw == null) return { ...it, raw: null, score: null };
@@ -296,58 +270,30 @@ function scoreAll() {
   });
 
   const missingCount = scored.filter((x) => x.score == null).length;
+  if (missingCount >= 3) return { ok: false, reason: "missing3", missingCount };
 
-  // 누락 3개 이상이면 산출 불가
-  if (missingCount >= 3) {
-    return { ok: false, reason: "missing3", missingCount };
-  }
-
-  // 영역별 점수 계산 + 누락 보정(0~2개: 영역평균 대체)
   const byDomain = {};
   for (const key of Object.keys(DOMAINS)) {
     const rows = scored.filter((x) => x.domain === key);
     const answeredScores = rows.filter((r) => r.score != null).map((r) => r.score);
     const avg = round1(answeredScores.reduce((a, b) => a + b, 0) / answeredScores.length);
     byDomain[key] = {
-      key,
-      name: DOMAINS[key].name,
-      desc: DOMAINS[key].desc,
-      avg,
-      answeredCount: answeredScores.length,
-      missingInDomain: rows.length - answeredScores.length,
+      key, name: DOMAINS[key].name, desc: DOMAINS[key].desc,
+      avg, answeredCount: answeredScores.length, missingInDomain: rows.length - answeredScores.length,
     };
   }
 
-  // 총점 계산(누락은 영역 평균으로 보정하되, 총점은 정수로)
-  // - 영역 평균(avg)은 소수1자리
-  // - 누락 보정치는 총점에 들어갈 때만 반올림(정수)
   let total = 0;
   scored.forEach((r) => {
-    if (r.score != null) {
-      total += r.score;
-    } else {
-      const dAvg = byDomain[r.domain].avg;
-      const fill = Math.round(dAvg); // 총점은 정수로 유지
-      total += fill;
-    }
+    if (r.score != null) total += r.score;
+    else total += Math.round(byDomain[r.domain].avg);
   });
 
-  // 등급(규범 없이 합리적 컷오프)
-  // - 24문항 평균 4.0 이상(총점 96 이상): 높음
-  // - 평균 3.0 이하(총점 72 이하): 도움필요
-  // - 그 외: 보통
   let grade = "보통";
   if (total >= 96) grade = "높음";
   if (total <= 72) grade = "도움필요";
 
-  return {
-    ok: true,
-    total,
-    grade,
-    missingCount,
-    byDomain,
-    scored,
-  };
+  return { ok: true, total, grade, missingCount, byDomain, scored };
 }
 
 function getTopDomains(byDomain, n = 2, order = "desc") {
@@ -358,19 +304,16 @@ function getTopDomains(byDomain, n = 2, order = "desc") {
 
 function domainTableHTML(byDomain) {
   const rows = Object.values(byDomain)
-    .map((d) => {
-      return `
-        <tr>
-          <td>${d.name}</td>
-          <td><strong>${d.avg.toFixed(1)}</strong></td>
-          <td class="tiny">${d.desc}</td>
-        </tr>
-      `;
-    })
-    .join("");
+    .map((d) => `
+      <tr>
+        <td>${d.name}</td>
+        <td><strong>${d.avg.toFixed(1)}</strong></td>
+        <td class="tiny">${d.desc}</td>
+      </tr>
+    `).join("");
 
   return `
-    <table class="table">
+    <table>
       <thead>
         <tr>
           <th>영역</th>
@@ -384,17 +327,11 @@ function domainTableHTML(byDomain) {
 }
 
 function buildActions(strengthTop, growthTop) {
-  // 성장 영역 2개 기준으로 실천 3개 생성
   const g1 = growthTop[0]?.key;
   const g2 = growthTop[1]?.key;
-
   const actions = [];
+  const pushUnique = (t) => { if (!actions.includes(t)) actions.push(t); };
 
-  function pushUnique(text) {
-    if (!actions.includes(text)) actions.push(text);
-  }
-
-  // 영역별 추천 실천
   const ACTION_BANK = {
     s: [
       "새로운 일은 ‘1분만 해보기’로 시작해요.",
@@ -418,9 +355,7 @@ function buildActions(strengthTop, growthTop) {
     ],
   };
 
-  // 성장 2개에서 우선 2개
   (ACTION_BANK[g1] || []).slice(0, 2).forEach(pushUnique);
-  // 나머지 1개는 또 다른 성장 영역 or 강점 영역에서 1개
   const pickThirdKey = g2 || strengthTop[0]?.key || "t";
   (ACTION_BANK[pickThirdKey] || []).slice(0, 1).forEach(pushUnique);
 
@@ -436,12 +371,12 @@ function buildHelpSentences() {
 
 function buildAdultNote(grade) {
   if (grade === "높음") {
-    return "현재는 ‘해보려는 마음(도전)–방법 찾기(전략)–다시 시작(회복)–도움 요청(관계)’ 흐름이 비교적 잘 이어지고 있어요. 과제를 조금 더 스스로 선택하게 하고, 성공의 이유를 ‘내 전략/내 노력’로 연결해주면 더 단단해져요.";
+    return "현재는 ‘해보려는 마음(도전)–방법 찾기(전략)–다시 시작(회복)–도움 요청(관계)’ 흐름이 비교적 잘 이어지고 있어요. 성공의 이유를 ‘내 전략/내 노력’로 연결해주면 더 단단해져요.";
   }
   if (grade === "도움필요") {
-    return "지금은 ‘시작/전환/도움 요청’에서 멈추는 구간이 있을 수 있어요. 결과는 낙인이 아니라 ‘지금 필요한 도구’를 찾는 신호예요. 과제를 더 작게 쪼개고, 막힐 때 쓸 질문 1개(예: “어디에서 막혔지?”)를 고정해주면 회복이 빨라져요.";
+    return "지금은 ‘시작/전환/도움 요청’에서 멈추는 구간이 있을 수 있어요. 결과는 낙인이 아니라 ‘지금 필요한 도구’를 찾는 신호예요. 과제를 더 작게 쪼개고, 막힐 때 쓸 질문 1개를 고정해주면 회복이 빨라져요.";
   }
-  return "현재는 기본 힘은 있는데 상황에 따라 흔들릴 수 있어요. 강점 영역은 유지하고, 낮게 나온 영역은 ‘한 번에 크게’가 아니라 ‘작게 자주’ 연습하면 좋아요. 특히 막힐 때 말로 정리하기(무엇이 어려운지)와 도움 요청 문장을 함께 연습해보세요.";
+  return "현재는 기본 힘은 있는데 상황에 따라 흔들릴 수 있어요. 강점은 유지하고, 낮게 나온 영역은 ‘작게 자주’ 연습하면 좋아요. 특히 막힐 때 말로 정리하기와 도움 요청 문장을 함께 연습해보세요.";
 }
 
 function renderResult() {
@@ -450,34 +385,26 @@ function renderResult() {
   const phase = ($phaseSelect.value || "").trim();
   const assessedAt = todayYMD();
 
-  // 채점
   const res = scoreAll();
-
-  // 결과 화면 전환
   showScreen("result");
 
-  // 저장 상태 초기화
   $saveState.textContent = "";
-  $saveState.className = "save-state";
   didAutoSave = false;
 
   if (!res.ok) {
-    if (res.reason === "missing3") {
-      $summaryLine.textContent = "아직 답이 부족해서 결과를 만들 수 없어요.";
-      $totalLine.textContent = "결과 산출 불가";
-      $missingLine.textContent = `누락 문항: ${res.missingCount}개 (3개 이상이면 다시 응답이 필요해요.)`;
-      $metaLine.textContent = `이름: ${name || "(미입력)"} / 생년월일: ${birthDate || "(미입력)"} / 진단 시점: ${phase || "(미입력)"} / 진단일: ${assessedAt}`;
-      $domainTableWrap.innerHTML = "";
-      $strengthList.innerHTML = "";
-      $growthList.innerHTML = "";
-      $actionList.innerHTML = "";
-      $helpSentenceList.innerHTML = "";
-      $adultNote.textContent = "";
-      return;
-    }
+    $summaryLine.textContent = "아직 답이 부족해서 결과를 만들 수 없어요.";
+    $totalLine.textContent = "결과 산출 불가";
+    $missingLine.textContent = `누락 문항: ${res.missingCount}개 (3개 이상이면 다시 응답이 필요해요.)`;
+    $metaLine.textContent = `이름: ${name || "(미입력)"} / 생년월일: ${birthDate || "(미입력)"} / 진단 시점: ${phase || "(미입력)"} / 진단일: ${assessedAt}`;
+    $domainTableWrap.innerHTML = "";
+    $strengthList.innerHTML = "";
+    $growthList.innerHTML = "";
+    $actionList.innerHTML = "";
+    $helpSentenceList.innerHTML = "";
+    $adultNote.textContent = "";
+    return;
   }
 
-  // 정상 결과
   const grade = res.grade;
   const total = res.total;
 
@@ -491,10 +418,8 @@ function renderResult() {
   $missingLine.textContent = res.missingCount > 0 ? `누락 문항: ${res.missingCount}개 (영역 평균으로 보정했어요.)` : "";
   $metaLine.textContent = `이름: ${name || "(미입력)"} / 생년월일: ${birthDate || "(미입력)"} / 진단 시점: ${phase || "(미입력)"} / 진단일: ${assessedAt}`;
 
-  // 영역 표
   $domainTableWrap.innerHTML = domainTableHTML(res.byDomain);
 
-  // TOP2
   const strengthTop = getTopDomains(res.byDomain, 2, "desc");
   const growthTop = getTopDomains(res.byDomain, 2, "asc");
 
@@ -506,37 +431,31 @@ function renderResult() {
     .map((d) => `<li><strong>${d.name}</strong> (${d.avg.toFixed(1)}) - 조금씩 연습하면 더 좋아져요.</li>`)
     .join("");
 
-  // 실천 3가지
   const actions = buildActions(strengthTop, growthTop);
   $actionList.innerHTML = actions.map((t) => `<li>${t}</li>`).join("");
 
-  // 도움요청 문장
   const helps = buildHelpSentences();
   $helpSentenceList.innerHTML = helps.map((t) => `<li>${t}</li>`).join("");
 
-  // 보호자/교사용
   $adultNote.textContent = buildAdultNote(grade);
 
-  // ====== 자동 저장(결과 보기 -> 결과 화면 진입 시 1회) ======
-  const analysis = {
-    summary: gradeMsg,
-    strengths: strengthTop.map((d) => ({ domain: d.key, name: d.name, avg: d.avg })),
-    growth: growthTop.map((d) => ({ domain: d.key, name: d.name, avg: d.avg })),
-    actions,
-    helpSentences: helps,
-  };
-
   const payload = {
-    key: `${name}|${birthDate}`, // 학생 구분 키(요청대로)
+    key: `${name}|${birthDate}`,
     name,
     birthDate,
-    phase,       // 학년초/학년말 유지
-    assessedAt,  // 진단일(자동)
+    phase,
+    assessedAt,
     total,
     grade,
     domainAvg: Object.fromEntries(Object.values(res.byDomain).map((d) => [d.key, d.avg])),
-    analysis,
-    answers, // 원응답(1~5, 역채점 전)
+    analysis: {
+      summary: gradeMsg,
+      strengths: strengthTop.map((d) => ({ domain: d.key, name: d.name, avg: d.avg })),
+      growth: growthTop.map((d) => ({ domain: d.key, name: d.name, avg: d.avg })),
+      actions,
+      helpSentences: helps,
+    },
+    answers,
   };
 
   autoSaveOnce(payload);
@@ -546,46 +465,38 @@ async function autoSaveOnce(payload) {
   if (didAutoSave) return;
   didAutoSave = true;
 
-  // 엔드포인트/토큰이 비어있으면 안내
   if (!SHEETS_ENDPOINT || SHEETS_ENDPOINT.includes("PASTE_")) {
     $saveState.textContent = "저장 설정이 아직 안 되어 있어요. (SHEETS_ENDPOINT 확인)";
-    $saveState.classList.add("warn");
+    $saveState.className = "save-state";
     return;
   }
   if (!SHEETS_TOKEN || SHEETS_TOKEN.includes("PASTE_")) {
     $saveState.textContent = "저장 설정이 아직 안 되어 있어요. (SHEETS_TOKEN 확인)";
-    $saveState.classList.add("warn");
+    $saveState.className = "save-state";
     return;
   }
 
   $saveState.textContent = "저장 중...";
-  $saveState.classList.remove("ok", "err", "warn");
-  $saveState.classList.add("pending");
+  $saveState.className = "save-state";
 
   try {
     const res = await fetch(SHEETS_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        token: SHEETS_TOKEN,
-        data: payload,
-      }),
+      body: JSON.stringify({ token: SHEETS_TOKEN, data: payload }),
     });
 
     const json = await res.json().catch(() => ({}));
-
     if (!res.ok || json.ok === false) {
       const msg = json?.error || `HTTP ${res.status}`;
       throw new Error(msg);
     }
 
     $saveState.textContent = "✅ 저장 완료!";
-    $saveState.classList.remove("pending");
-    $saveState.classList.add("ok");
+    $saveState.className = "save-state ok";
   } catch (e) {
     $saveState.textContent = `❌ 저장 실패: ${String(e.message || e)}`;
-    $saveState.classList.remove("pending");
-    $saveState.classList.add("err");
+    $saveState.className = "save-state bad";
   }
 }
 
@@ -607,7 +518,7 @@ $btnStart.addEventListener("click", () => {
 
   setTimeout(() => {
     const firstBtn = $emojiGroup.querySelector(".emoji");
-    if (firstBtn) firstBtn.focus();
+    firstBtn?.focus();
   }, 0);
 });
 
@@ -621,17 +532,12 @@ $btnPrev.addEventListener("click", goPrev);
 $btnNext.addEventListener("click", goNext);
 
 $btnRestart.addEventListener("click", () => {
-  // 초기화
   currentIndex = 0;
   initAnswers();
   didAutoSave = false;
-
-  // 입력값은 유지(원하면 비우도록 바꿀 수 있음)
   showScreen("start");
 });
 
 // 처음 진입
 showScreen("start");
 initAnswers();
-
-
